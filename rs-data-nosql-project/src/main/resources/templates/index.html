@@ -1,0 +1,148 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>DBPRO: NoSQL Remote Sensing</title>
+
+    <!-- Stylesheets: Bootstrap, Leaflet, FontAwesome, own stylesheet -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+
+    <!-- JavaScript: jQuery, Popper, Leaflet, Bootstrap, own script -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+    <script src="./js/index_script.js"></script>
+</head>
+
+<!-- HTML body containing the actual page, styling supported by included Bootstrap library -->
+<body class="mb-4">
+<div class="container-fluid">
+    <div class="row mt-2">
+        <div class="col float-sm-left">
+            <!-- Actual Leaflet map component -->
+            <div id="mapid" class="mt-2"></div>
+            <div class="row mt-2 ml-3">
+                <!-- Analogue query section below map -->
+                <div class="col-md-3">
+                    <label for="ulx">Upper left x (latitude):</label>
+                    <input type="number" id="ulx" step="0.01" class="float-sm-right"/>
+                    <label for="uly">Upper left y (longitude):</label>
+                    <input type="number" id="uly" step="0.01" class="float-sm-right"/>
+                </div>
+                <div class="col-md-3">
+                    <label for="lrx">Lower right x (latitude):</label>
+                    <input type="number" id="lrx" step="0.01" class="float-sm-right"/>
+                    <label for="lry">Lower right y (longitude):</label>
+                    <input type="number" id="lry" step="0.01" class="float-sm-right"/>
+                </div>
+                <div class="col-2">
+                    <button id="get-output-btn" class="btn btn-primary mt-5">Send analogue query</button>
+                </div>
+                <div class="col-2">
+                    <span class="badge badge-success pull-right" id="all-labels-selected-badge">
+                        All labels selected
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col scroll-panel float-sm-left">
+            <!-- Label selection and buttons right of map component -->
+            <div id="label_fields_wrapper">
+                <div>
+                    <h4>Label query type:</h4>
+                    <label class="radio-inline"><input type="radio" name="query-option-radio" value="CONTAINS_ALL">
+                        Contains all
+                    </label>
+                    <label class="radio-inline mr-2"><input type="radio" name="query-option-radio" value="CONTAINS_ONLY">
+                        Contains only
+                    </label>
+                    <label class="radio-inline mr-2"><input type="radio" name="query-option-radio" value="CONTAINS_SOME" checked>
+                        Contains some
+                    </label>
+                </div>
+                <div>
+                    <h4>Geospatial query type:</h4>
+                    <label class="radio-inline"><input type="radio" name="geospatial-option-radio" value="GEO_INTERSECTS" checked>
+                        Intersecting selected area
+                    </label>
+                    <label class="radio-inline mr-2"><input type="radio" name="geospatial-option-radio" value="GEO_WITHIN">
+                        Fully contained in selected area
+                    </label>
+                </div>
+                <button class="add_label_field btn btn-primary mt-2 mb-4" name="add_label_field">
+                    Add Label Restriction
+                </button>
+                <button id="display-query-information" class="btn btn-primary mt-2 mb-4">
+                    Display Query information
+                </button>
+            </div>
+        </div>
+        <div class="col scroll-panel float-sm-right">
+            <!-- Output section right of label selection / buttons right of map component -->
+            <h2 id="output-heading"></h2>
+            <div id="output"></div>
+            <!-- Matching image patches injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal shown if the user requests more dropdown fields than there are labels available to select -->
+<div id="too-many-labels-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">There is nothing else to be selected...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>You can select every possible label using the already rendered fields.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal shown if the user tries to submit an invalid query or clicks the query information button. -->
+<div id="query-information" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">How to use this application...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Either use the map component for interactive visual queries or insert coordinates into the
+                    coordinate HTML fields below and send an analogue query to the application.</p>
+                <p><u>Coordinate query conditions:</u></p>
+                <p>1. -180.0 &lt;= latitude &lt;= 180.0 and -90.0 &lt;= longitude &lt;= 90.0</p>
+                <p>2. Upper left latitude &lt; lower right latitude</p>
+                <p>3. Upper left longitude &gt; lower right longitude</p>
+                <p>4. The latitude range must be smaller than 180.0 degrees as bigger ranges are not yet supported by Spring's MongoDB API.</p>
+                <br />
+                <p><u>Querying information:</u></p>
+                <p>1. You can control how to utilize the labels in the queries with the radio buttons.</p>
+                <p>2. Per default, all labels are selected internally, meaning a "contains all" query with no label
+                    restriction field uses all labels and hence returns an empty result set
+                    (as no image patches contain all 44 possible labels).</p>
+                <p><u>Types of label queries:</u></p>
+                <p>Contains all: returned image patches contain all given labels, but may contain even more.</p>
+                <p>Contains only: returned image patches contain only the given labels, not more or less.</p>
+                <p>Contains some: returned image patches contain at least one of the given labels, but may also contain several or all of them.</p>
+                <p>Pure label queries (without any coordinate querying) are only executed if the coordinate input fields are fully empty.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

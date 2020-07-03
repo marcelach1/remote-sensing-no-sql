@@ -1,0 +1,7 @@
+com.tuberlin.dbpro.controllers
+com.tuberlin.dbpro.models.database
+com.tuberlin.dbpro.models.diskreading
+com.tuberlin.dbpro.models.frontend
+com.tuberlin.dbpro.repositories
+com.tuberlin.dbpro.rsdatanosqlproject
+com.tuberlin.dbpro.services

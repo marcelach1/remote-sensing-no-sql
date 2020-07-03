@@ -1,0 +1,64 @@
+/* CSS3 style sheet for application. */
+
+.container {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 1000px;
+}
+
+#mapid {
+    width: 1000px;
+    height: 1000px;
+}
+
+.label-field {
+    margin-bottom: 5%;
+}
+
+.scroll-panel {
+    max-height: 1000px;
+    overflow-y: auto;
+}
+
+#output-heading {
+    visibility: hidden;
+}
+
+.leaflet-draw-actions {
+    display: none !important;
+}
+
+/* Fading colors source: https://stackoverflow.com/questions/19403002/css3-animation-smooth-infinite-cycle */
+/* Last access: 02 July 2020, around 1PM UTC+1 */
+
+body {
+    -webkit-animation: colorchange 50s linear infinite;
+    -moz-animation: colorchange 50s linear infinite;
+    animation: colorchange 50s linear infinite;
+}
+
+@keyframes colorchange
+{
+    0%  {background: red;}
+    25% {background: orange;}
+    50% {background: yellow;}
+    75% {background: white;}
+    100% {background: red;}
+}
+
+@-moz-keyframes colorchange {
+    0%  {background: red;}
+    25% {background: orange;}
+    50% {background: yellow;}
+    75% {background: white;}
+    100% {background: red;}
+}
+
+@-webkit-keyframes colorchange /* Safari and Chrome - necessary duplicate */
+{
+    0%  {background: red;}
+    25% {background: orange;}
+    50% {background: yellow;}
+    75% {background: white;}
+    100% {background: red;}
+}
