@@ -6,10 +6,11 @@ import com.tuberlin.dbpro.models.frontend.InputRequest;
 import com.tuberlin.dbpro.repositories.GeoJsonRepository;
 import com.tuberlin.dbpro.repositories.PatchImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.geo.GeoJsonLineString;
 import org.springframework.data.mongodb.core.geo.GeoJsonPolygon;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -229,7 +230,7 @@ public class DatabaseService {
      * @param geojsons list of GeoJson objects
      * @return list of corresponding image patches' names
      */
-    static List<String> returnPatchNames(List<GeoJson> geojsons) {
+    static List<String> returnPatchNamesINI(List<GeoJson> geojsons) {
         if (geojsons == null || geojsons.size() == 0) {
             return new ArrayList<>();
         }
@@ -247,4 +248,121 @@ public class DatabaseService {
                         .getPatchName())
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Returns list of patch names of the passed GeoJson objects.
+     * @param geojsons list of GeoJson objects
+     * @return list of corresponding image patches' names
+     */
+    //TODO: ask what happen if I do not make this function static?
+    List<String> returnPatchNames(List<GeoJson> geojsons) {
+        if (geojsons == null || geojsons.size() == 0) {
+            return new ArrayList<>();
+        }
+
+        // streams are intended here instead of classic database projections
+        // Why? => Because mongoDB projections always deliver an _id field that we cannot exclude from our result set,
+        // therefore we would have to use streams anyway to drop these
+        // (we don't want to pass unnecessary information to the frontend, just the requested image patch names)
+        // hence, we do not use projections + streams but only streams to save performance
+
+        List<Object[]> labels = geojsons
+                .parallelStream()
+                .map(geoJson -> geoJson.getProperties().getLabels().toArray())
+                .collect(Collectors.toList());
+        System.out.println("TOTAL No. PATCHES in this selection=" + labels.size());
+
+        // Get the labels of each patch, decoded
+        List<String> labelsString = new ArrayList<String>();
+        // Get a summary of all the labels contained in this List
+        Map<Character, Integer> labelsCharSummary = new TreeMap<>();
+        for(Object [] lab: labels) {
+            String this_patch_labels = "";
+            for(int i=0; i<lab.length; i++){
+                //System.out.println("Char: " + lab[i]);
+                if(labelsCharSummary.containsKey(lab[i])){
+                    int val = labelsCharSummary.get(lab[i]);
+                    val++;
+                    labelsCharSummary.replace((Character)lab[i],val);
+                } else {
+                    labelsCharSummary.put((Character)lab[i],1);
+                }
+                this_patch_labels += this.labelService.getDecodedCharacter((Character)lab[i]) + ", ";
+            }
+            labelsString.add(this_patch_labels);
+        }
+        // label characters are decoded back to normal strings 'f' ->  "Sea and ocean"
+        Map<String, Integer> labelsStringSummary = new TreeMap<>();
+        for (Map.Entry<Character, Integer> entry : labelsCharSummary.entrySet()) {
+            Character key = entry.getKey();
+            Integer value = entry.getValue();
+            labelsStringSummary.put(this.labelService.getDecodedCharacter(key),value);
+        }
+
+        System.out.println("LABELS CHAR SUMMARY:" + EntriesSortedByValues(labelsCharSummary).toString());
+        System.out.println("LABELS STRING SUMMARY:" + EntriesSortedByValues(labelsStringSummary).toString());
+
+        List<Map.Entry<String,Integer>> returnList = EntriesSortedByValues(labelsStringSummary);
+        List<String> patchesLabelsNamesCoor = new ArrayList<String>();
+
+        patchesLabelsNamesCoor.add("TOTAL No. PATCHES in this selection=" + labels.size());
+        patchesLabelsNamesCoor.add("LABELS SUMMARY: ");
+        for (Map.Entry<String, Integer> entry : returnList) {
+            patchesLabelsNamesCoor.add(entry.getKey() + "=" + entry.getValue());
+        }
+
+        // get the patches names
+        //patchesLabelsNamesCoor.add("PATCHES_NAMES AND COOR:");
+        List<String> patches_names = geojsons
+                .parallelStream()
+                .map(geoJson -> geoJson.getProperties().getPatchName())
+                .collect(Collectors.toList());
+        //for(String str : patches_names) {
+        //    patchesLabelsNamesCoor.add(str);
+        //}
+
+        // get the coordinates of the patches in the selection
+        List<List<GeoJsonLineString>> locations = geojsons
+                .parallelStream()
+                .map(geoJson -> geoJson.getLocation().getCoordinates())
+                .collect(Collectors.toList());
+
+        //System.out.println("No. LOCATIONS: " + locations.size());
+        int n=0;
+        for(List<GeoJsonLineString> loc: locations) {
+           for(GeoJsonLineString coor : loc) {
+               // TODO: calculate the middle point for the moment returning (ul_long,ul_lat)
+               //System.out.println("  LineString: " + coor.getCoordinates());
+               //System.out.println("  point[0]: " + coor.getCoordinates().get(0));
+               patchesLabelsNamesCoor.add("patch: " + patches_names.get(n) + ";" +
+                       coor.getCoordinates().get(0).getY()+ ";" +
+                       coor.getCoordinates().get(0).getX() + ";" +
+                       labelsString.get(n));
+               n++;
+           }
+        }
+
+
+
+        return patchesLabelsNamesCoor;
+    }
+
+
+    /**
+     * from:
+     *   https://stackoverflow.com/questions/11647889/sorting-the-mapkey-value-in-descending-order-based-on-the-value
+     */
+    static <K,V extends Comparable<? super V>> List<Map.Entry<K, V>> EntriesSortedByValues(Map<K,V> map) {
+        List<Map.Entry<K,V>> sortedEntries = new ArrayList<Map.Entry<K,V>>(map.entrySet());
+        Collections.sort(sortedEntries, new Comparator<Map.Entry<K,V>>() {
+                    @Override
+                    public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2) {
+                        return e2.getValue().compareTo(e1.getValue());
+                    }
+                }
+        );
+        return sortedEntries;
+    }
+
+
 }

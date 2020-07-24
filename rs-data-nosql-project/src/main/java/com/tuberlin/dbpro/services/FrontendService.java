@@ -91,7 +91,7 @@ public class FrontendService {
         response.setPatchNames(resultNames);
 
         // print and return results
-        System.out.println("Returning " + String.valueOf(response.getPatchNames().size()) + " image names: ");
+        //System.out.println("Returning " + String.valueOf(response.getPatchNames().size()) + " image names: ");
 
         return response;
     }

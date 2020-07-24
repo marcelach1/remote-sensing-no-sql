@@ -93,14 +93,19 @@ function initializeMap() {
     map.on('draw:created', function(e) {
         editableLayers.clearLayers();
         editableLayers.addLayer(e.layer);
-        sendVisualQuery(e.layer.toGeoJSON().geometry);
+        sendVisualQuery(e.layer.toGeoJSON().geometry, map);
+
     });
+
+
+
 
     // erase drawings if user clicks on map
     map.on('click', function(e) {
         editableLayers.clearLayers();
     });
 }
+
 
 /*
 Initializes template buttons.
@@ -166,7 +171,8 @@ function initializeButtons() {
                     if (!result || !result.patchNames) {
                         heading.append('Names of matching image patches (0): ');
                     } else {
-                        heading.append('Names of matching image patches (' + result.patchNames.length + '): ');
+                        //heading.append('Names of matching image patches (' + result.patchNames.length + '): ');
+                        heading.append('Labels contained in selection: ');
                     }
 
                     heading.attr( "style", "visibility: visible !important;");
@@ -194,7 +200,7 @@ function initializeButtons() {
 /*
 Triggers a visual query on the server containing the passed coordinates and selected labels.
  */
-function sendVisualQuery(geoJsonGeometry) {
+function sendVisualQuery(geoJsonGeometry, map) {
     const selectedLabels = getSelectedLabels();
     const payload = JSON.stringify({
         'geometry': geoJsonGeometry,
@@ -221,13 +227,14 @@ function sendVisualQuery(geoJsonGeometry) {
             if (!result || !result.patchNames) {
                 heading.append('Names of matching image patches (0): ');
             } else {
-                heading.append('Names of matching image patches (' + result.patchNames.length + '): ');
+                //heading.append('Names of matching image patches (' + result.patchNames.length + '): ');
+                heading.append('Labels contained in selection: ');
             }
             heading.attr( "style", "visibility: visible !important;");
 
             // render each result image patch name in output section
             $.each(result.patchNames, function(index, value){
-                if(value !== null) {
+                if(value !== null && !value.startsWith("patch:")) {
                     const div = '<div>' + value + '</div>';
                     $('#' + outputPanelId).append($(div));
                 }
@@ -239,9 +246,35 @@ function sendVisualQuery(geoJsonGeometry) {
             }
 
             console.log('Total milliseconds elapsed since request: ', Date.now() - startMillis);
+
+           drawMarkers(map, result);
         }
     });
+
+
 }
+
+function drawMarkers(map, result){
+
+
+    var markers    = L.markerClusterGroup();
+
+    $.each(result.patchNames, function(index, value){
+       if(value !== null && value.startsWith("patch:")) {
+          var res = value.split(";");
+          var popup = '<b>'+ res[3] +'</b>';
+          markers.addLayer(L.marker([res[1], res[2]] ) ).bindPopup( popup ).bindTooltip(res[0].substring(6, res[0].length));
+          //console.log(res[0] + "  markers.addLayer(L.marker([" + res[1] + " , " +  res[2] + "])).bindPopup( popup );");
+       }
+    });
+
+     map.addLayer(markers);
+
+
+}
+
+
+
 
 /*
 Returns the payload needed to send an analogue query to the server.

@@ -14,6 +14,7 @@ public class LabelService {
      * Map containing the target character for every possible BigEarthNet label.
      */
     private Map<String, Character> labelMap = new TreeMap<>();
+    private Map<Character, String> labelDecodeMap = new TreeMap<>();
 
     /**
      * Returns all supported labels in original string representation.
@@ -22,6 +23,8 @@ public class LabelService {
     public List<String> getLabels() {
         return new ArrayList<String>(this.labelMap.keySet());
     }
+
+    public String getDecodedCharacter(Character ch) { return labelDecodeMap.get(ch);}
 
     /**
      * Returns the requested labels mapped to their character representation.
@@ -42,6 +45,9 @@ public class LabelService {
 
         return resultList;
     }
+
+
+
 
     /**
      * Initializes the label map so labels read from disk (or requested by frontend) can be mapped to a single character
@@ -99,6 +105,7 @@ public class LabelService {
         // map each label to ASCII-conform character
         for(int i = 0; i < POSSIBLE_LABELS.length; i++) {
             labelMap.put(POSSIBLE_LABELS[i], (char) (65 + i));
+            labelDecodeMap.put((char) (65 + i),POSSIBLE_LABELS[i]);
         }
     }
 }

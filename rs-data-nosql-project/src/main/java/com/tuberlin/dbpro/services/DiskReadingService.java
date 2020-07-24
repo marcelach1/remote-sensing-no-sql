@@ -70,6 +70,8 @@ public class DiskReadingService {
     /**
      * Reads entire BigEarthNet dataset from disk into database.
      */
+ //Comment after loading the BigEarthNet files
+/*
     @PostConstruct
     public void saveBigEarthNetToDatabase () {
         this.numberOfReadPatches = 0;
@@ -77,7 +79,10 @@ public class DiskReadingService {
         this.currentPatchPhotos = new TreeMap<>();
 
         // change this according to the location of your BigEarthNet dataset
-        File[] allObjects = new File ("../data").listFiles();
+        //File[] allObjects = new File ("../data").listFiles();
+        //File[] allObjects = new File ("/projects/data/BigEarthNet-10000Examples").listFiles();
+        //File[] allObjects = new File ("/media/charfuelan/Backup-2019/projects/data/BigEarthNet-v1.0").listFiles();
+        File[] allObjects = new File ("/data/sentinel2/BigEarthNet-v1.0").listFiles();
 
         if (allObjects != null && allObjects.length > 0) {
             this.readFiles(allObjects);
@@ -86,6 +91,7 @@ public class DiskReadingService {
         }
         System.out.println("Total image patches collected: " + String.valueOf(numberOfReadPatches));
     }
+*/
 
     /**
      * Reads in given image patch folder from disk.
@@ -106,13 +112,18 @@ public class DiskReadingService {
                     // last access: 02 July 2020, around 1PM UTC+1
                     Arrays.sort(directoryFiles, Comparator.comparing(File::getName));
 
+/* Commented just to load the json metadata and not the tiff files
                     for(int i = 0; i < 12; i++) { // read images first into memory
                         this.saveImageIntoImageBuffer(directoryFiles[i]);
                     }
+*/
+
                     // then save objects from memory into database
                     this.numberOfReadPatches++;
                     this.readAndSaveGeoJsonToDatabase(directoryFiles[12], reader, stringBuilder);
+/* Commented just to load the json metadata and not the tiff files
                     this.saveBufferedPatchImagesToDatabase();
+ */
                 }
             }
         }

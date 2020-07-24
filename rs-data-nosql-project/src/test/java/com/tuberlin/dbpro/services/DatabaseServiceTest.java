@@ -5,7 +5,7 @@ import com.tuberlin.dbpro.models.database.Properties;
 import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
-import static com.tuberlin.dbpro.services.DatabaseService.returnPatchNames;
+import static com.tuberlin.dbpro.services.DatabaseService.returnPatchNamesINI;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 class DatabaseServiceTest {
@@ -28,7 +28,7 @@ class DatabaseServiceTest {
         g2.setProperties(p2);
         geojsons.add(g1);
         geojsons.add(g2);
-        List<String> list = returnPatchNames(geojsons);
+        List<String> list = returnPatchNamesINI(geojsons);
 
         assertTrue("Image patch name mapping is faulty.",
                 list.get(0).equals("S2A_MSIL2A_20170613T101031_0_57"));
@@ -40,11 +40,11 @@ class DatabaseServiceTest {
     void testReturnPatchNamesInvalid(){
 
         List<GeoJson> geojsons = new ArrayList<>();
-        List<String> returnedPatchNames = returnPatchNames(geojsons);
+        List<String> returnedPatchNames = returnPatchNamesINI(geojsons);
         assertTrue("Empty result list mapping false!", returnedPatchNames.size() == 0);
 
         geojsons = null;
-        returnedPatchNames = returnPatchNames(geojsons);
+        returnedPatchNames = returnPatchNamesINI(geojsons);
         assertTrue("Empty result list mapping false!", returnedPatchNames.size() == 0);
     }
 }
